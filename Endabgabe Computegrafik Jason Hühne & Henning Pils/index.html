@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #191919;
+        }
+
+        canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" tabindex="0"></canvas>
+</body>
+
+<script src="https://echtzeit-computergrafik-ws24.github.io/src/glance-v0.4.20-dev.min.js"></script>
+<script>
+    // Simulate a classroom.
+    const {
+        gl, onMouseHover, onMouseDown, onMouseDrag, onMouseUp, onMouseWheel, onKeyDown, onKeyUp, onResize, setRenderLoop, Vec3, Vec4, Mat3, Mat4, Quat,
+    } = (() => {
+
+        // WebGL context
+        const canvas = document.getElementById('canvas');
+        const gl = glance.getContext(canvas, {
+            alpha: true,
+            premultipliedAlpha: false,
+        });
+
+
+        // Render Loop.
+        function setRenderLoop(callback) {
+            const timeAtStart = performance.now();
+            let lastTime = timeAtStart;
+            function renderLoop(lastFrameEndTime) {
+                const globalTime = lastFrameEndTime - performance.timeOrigin;
+                const localTime = lastFrameEndTime - timeAtStart;
+                const deltaTime = Math.max(0.000001, localTime - lastTime); // never zero
+                lastTime = localTime;
+                callback({ time: localTime, globalTime, deltaTime });
+                requestAnimationFrame(renderLoop);
+            }
+            requestAnimationFrame(renderLoop);
+        }
+
+        // Resize
+        let resizeCallback = null;
+        function onResizeInternal() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            gl.viewport(0, 0, width, height);
+            if (resizeCallback)
+            {
+                resizeCallback(width, height);
+            }
+        }
+        onResizeInternal();
+        window.addEventListener("resize", onResizeInternal);
+        function onResize(callback) {
+            resizeCallback = callback;
+            resizeCallback(window.innerWidth, window.innerHeight);
+        }
+
+        // Mouse Down
+        let clicked = false;
+        let mouseDownCallback = null;
+        canvas.addEventListener("pointerdown", (event) => {
+            clicked = true;
+            if (mouseDownCallback) mouseDownCallback(event);
+        });
+        function onMouseDown(callback) {
+            mouseDownCallback = callback;
+        }
+
+        // Mouse Up
+        let mouseUpCallback = null;
+        canvas.addEventListener("pointerup", (event) => {
+            clicked = false;
+            if (mouseUpCallback) mouseUpCallback(event);
+        });
+        function onMouseUp(callback) {
+            mouseUpCallback = callback;
+        }
+
+        // Mouse hover / drag
+        let mouseHoverCallback = null;
+        let mouseDragCallback = null;
+        canvas.addEventListener("pointermove", (event) => {
+            if (clicked && mouseDragCallback) mouseDragCallback(event);
+            else if (mouseHoverCallback) mouseHoverCallback(event);
+        });
+        function onMouseHover(callback) {
+            mouseHoverCallback = callback;
+        }
+        function onMouseDrag(callback) {
+            mouseDragCallback = callback;
+        }
+
+        // Mouse Wheel
+        let mouseWheelCallback = null;
+        canvas.addEventListener("wheel", (event) => {
+            if (mouseWheelCallback) mouseWheelCallback(event);
+        });
+        function onMouseWheel(callback) {
+            mouseWheelCallback = callback;
+        }
+
+        // Key Down
+        let keyDownCallback = null;
+        canvas.addEventListener("keydown", (event) => {
+            if (keyDownCallback) keyDownCallback(event);
+        });
+        function onKeyDown(callback) {
+            keyDownCallback = callback;
+        }
+
+        // Key Up
+        let keyUpCallback = null;
+        canvas.addEventListener("keyup", (event) => {
+            if (keyUpCallback) keyUpCallback(event);
+        });
+        function onKeyUp(callback) {
+            keyUpCallback = callback;
+        }
+
+        // "Sticky" values are used in the classroom to synchronize the code between
+        // client and server. They are not necessary here and can be replaced by
+        // regular variables instead
+        // The "Cache" variables are meant to minimize recalculations of values that
+        // seldom change, like the view matrix or camera position. They too can be
+        // replaced by regular variables.
+
+        return {
+            gl, onMouseHover, onMouseDown, onMouseDrag, onMouseUp, onMouseWheel, onKeyDown, onKeyUp, onResize, setRenderLoop, Vec3: glance.Vec3, Vec4: glance.Vec4, Mat3: glance.Mat3, Mat4: glance.Mat4, Quat: glance.Quat,
+        };
+    })();
+</script>
+
+<script src="script.js" type="module" crossorigin="anonymous"></script>
+
+</html>
